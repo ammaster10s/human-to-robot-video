@@ -11,6 +11,7 @@ from retarget import demo_frames, plan
 CAMERA = {
     "fx": 300, "fy": 300, "cx": 90, "cy": 50, "depth_scale": 0.001,
     "camera_to_robot": [[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0.6], [0, 0, 0, 1]],
+    "object_center_offset": [0, 0, -0.025],
 }
 
 
@@ -22,6 +23,8 @@ def write_captures(rgb_dir, depth_dir, frames):
         depth = np.zeros(rgb.shape[:2], dtype=np.uint16)
         for name, color in MARKERS.items():
             x, y, z = frame[name]
+            if name == "object_position":
+                z -= CAMERA["object_center_offset"][2]
             z = 0.6 - z
             u, v = round(90 + 300 * x / z), round(50 - 300 * y / z)
             rgb[v - 1:v + 2, u - 1:u + 2] = color

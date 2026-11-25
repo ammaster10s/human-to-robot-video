@@ -68,18 +68,28 @@ def run_trial(actions: list[dict], output: Path, mode: str, args: argparse.Names
         dict(action, grip_force=target if action["closed"] else 0.0)
         for action in actions
     ], reference, **footage)
-    if args.candidate_dir is None:
+    external = args.candidate_dir
+    sources = [external] if isinstance(external, Path) else list(external or ())
+    if not sources:
         render(samples, candidate, **footage)
-    visual = verify(reference, args.candidate_dir or candidate)
+    attempts = []
+    for source in sources or [candidate]:
+        visual = verify(reference, source)
+        attempts.append({"source": str(source), "video": visual})
+        if visual["accepted"]:
+            break
     accepted = physical["accepted"] and visual["accepted"]
     if accepted:
-        if args.candidate_dir is not None:
+        if sources:
             candidate.mkdir()
+            for sidecar in ("conditions", "observations"):
+                if (source / sidecar).is_dir():
+                    shutil.copytree(source / sidecar, candidate / sidecar)
         pairs = []
         for index, action in enumerate(actions):
             name = f"frame_{index:06d}.png"
-            if args.candidate_dir is not None:
-                shutil.copyfile(args.candidate_dir / name, candidate / name)
+            if sources:
+                shutil.copyfile(source / name, candidate / name)
             pairs.append({
                 "image": f"video/{name}",
                 "time": action["time"],
@@ -95,6 +105,8 @@ def run_trial(actions: list[dict], output: Path, mode: str, args: argparse.Names
         "grip_target_n": target,
         "physical": physical,
         "video": visual,
+        "decision": "accept" if accepted else "drop",
+        "attempts": attempts,
     }
     write_json(output / "report.json", report)
     return report
@@ -110,14 +122,15 @@ def main() -> int:
     parser.add_argument("--frames-dir", type=Path, help="source PNG sequence at the tracked timestamps")
     parser.add_argument("--masks-dir", type=Path, help="corresponding human masks")
     parser.add_argument("--background", type=Path, help="clean fixed-camera background PNG")
-    parser.add_argument("--candidate-dir", type=Path, help="pre-edited PNGs to verify")
+    parser.add_argument("--candidate-dir", type=Path, action="append",
+                        help="pre-edited PNGs to verify, repeat for retry attempts")
     args = parser.parse_args()
 
     footage = (args.frames_dir, args.masks_dir, args.background)
     if any(footage) and not all(footage):
         parser.error("--frames-dir, --masks-dir and --background must be supplied together")
-    if args.candidate_dir is not None and (any(footage) or args.compare):
-        parser.error("--candidate-dir cannot be combined with --compare or source frames")
+    if args.candidate_dir and args.compare:
+        parser.error("--candidate-dir requires a single grip setting")
 
     try:
         mode = grip_mode(args.prompt)

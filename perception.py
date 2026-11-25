@@ -34,11 +34,17 @@ def _calibration(camera):
         and np.isclose(np.linalg.det(rotation), 1, atol=1e-4)
     ):
         raise ValueError("camera_to_robot must be a rigid transform")
-    return fx, fy, cx, cy, scale, transform
+    try:
+        object_offset = np.asarray(camera.get("object_center_offset", [0, 0, 0]), dtype=float)
+    except (TypeError, ValueError, OverflowError) as error:
+        raise ValueError("object_center_offset must contain three finite coordinates") from error
+    if object_offset.shape != (3,) or not np.isfinite(object_offset).all():
+        raise ValueError("object_center_offset must contain three finite coordinates")
+    return fx, fy, cx, cy, scale, transform, object_offset
 
 
 def _landmark(rgb, depth, color, name, calibration):
-    fx, fy, cx, cy, scale, transform = calibration
+    fx, fy, cx, cy, scale, transform, object_offset = calibration
     # shortcut: controlled color markers, replace with a learned tracker for unmarked footage.
     rows, cols = np.where(np.max(np.abs(rgb - color), axis=2) <= 55)
     raw = depth[rows, cols]
@@ -49,6 +55,8 @@ def _landmark(rgb, depth, color, name, calibration):
     z = float(np.median(raw[valid])) * scale
     camera_point = [(u - cx) * z / fx, (v - cy) * z / fy, z, 1]
     point = (transform @ camera_point)[:3]
+    if name == "object_position":
+        point += object_offset
     if not np.isfinite(point).all():
         raise ValueError(f"{name} projected outside finite coordinates")
     # Drop floating-point residue at exact workspace boundaries such as the tabletop.
@@ -66,6 +74,7 @@ def track(rgb_dir: Path, depth_dir: Path, camera: dict, fps: float) -> list[dict
         raise ValueError("RGB and depth need matching PNG sequences starting at frame_000000.png")
 
     tracks = []
+    image_size = None
     for i, name in enumerate(names):
         try:
             with Image.open(rgb_dir / name) as color, Image.open(depth_dir / name) as raw_depth:
@@ -73,6 +82,9 @@ def track(rgb_dir: Path, depth_dir: Path, camera: dict, fps: float) -> list[dict
                     raise ValueError("expected PNG input")
                 if color.size != raw_depth.size:
                     raise ValueError("RGB and depth sizes differ")
+                if image_size is not None and color.size != image_size:
+                    raise ValueError("frame size changed in the sequence")
+                image_size = color.size
                 if raw_depth.mode not in {"I", "I;16", "I;16B", "I;16L"}:
                     raise ValueError("depth must be a single-channel 16-bit PNG")
                 rgb = np.asarray(color.convert("RGB"), dtype=np.int16)
@@ -80,8 +92,8 @@ def track(rgb_dir: Path, depth_dir: Path, camera: dict, fps: float) -> list[dict
             tracks.append({
                 "time": i / fps,
                 **{
-                    name: _landmark(rgb, depth, color, name, calibration)
-                    for name, color in MARKERS.items()
+                    label: _landmark(rgb, depth, color, label, calibration)
+                    for label, color in MARKERS.items()
                 },
             })
         except (OSError, ValueError) as error:

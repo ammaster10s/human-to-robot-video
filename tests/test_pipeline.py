@@ -35,6 +35,17 @@ class PipelineTest(unittest.TestCase):
                 traces.append([(row["time"], row["position"], row["closed"]) for row in labels])
             self.assertEqual(*traces)
 
+            retry_output = Path(temp) / "retry"
+            retry = subprocess.run([
+                sys.executable, str(project / "run.py"), "--out", str(retry_output),
+                "--candidate-dir", str(Path(temp) / "missing"),
+                "--candidate-dir", str(output / "gentle" / "video"),
+            ], check=True, capture_output=True, text=True, timeout=45)
+            report = json.loads(retry.stdout)
+            self.assertEqual(report["decision"], "accept")
+            self.assertEqual([item["video"]["accepted"] for item in report["attempts"]], [False, True])
+            self.assertTrue((retry_output / "video" / "conditions" / "keypoints.json").is_file())
+
     def test_object_drift_rejects_replay_even_when_the_tool_tracks(self):
         actions = plan(demo_frames())
         samples = replay(actions, 2.0)
