@@ -1,6 +1,6 @@
 """Shared scene geometry and limits for the simulated tabletop gantry.
 
-`gantry.xml` cannot import these values, so `tests/test_config.py` checks that
+`models/gantry.xml` cannot import these values, so `tests/test_config.py` checks that
 the MuJoCo model and this module stay in sync.
 """
 

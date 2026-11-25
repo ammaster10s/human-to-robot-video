@@ -9,7 +9,7 @@ replay, and pairs accepted robot frames with action labels.
 
 ```sh
 uv sync --python 3.12
-uv run --locked python demo.py
+uv run --locked python scripts/demo.py
 ```
 
 This runs every demo once (about 30 s on a laptop CPU) and writes
@@ -18,9 +18,19 @@ verification negative controls, the demonstrator feedback examples and the
 policy baseline, together with the JSON reports and two replay GIFs. The
 `results/` folder is committed, so you can read it without installing anything.
 
+## Repository layout
+
+```
+scripts/   all Python modules and command-line tools (run each as python scripts/<name>.py)
+models/    gantry.xml, the MuJoCo scene
+tests/     unit and pipeline tests
+results/   committed demo summary, JSON reports and replay GIFs (regenerate with scripts/demo.py)
+runs/      full outputs of your own runs (ignored by git)
+```
+
 ## Pipeline at a glance
 
-| Proposal stage | Module | What it does here |
+| Proposal stage | Module in `scripts/` | What it does here |
 |---|---|---|
 | 1. Hand and scene perception | `perception.py` | Tracks thumb, index finger and object markers in calibrated RGB-D frames |
 | 2. Action retargeting | `retarget.py` | Finds grasp and release from fingertip spacing and plans gantry actions |
@@ -30,18 +40,18 @@ policy baseline, together with the JSON reports and two replay GIFs. The
 | 6. Policy learning and evaluation | `policy.py` | Trajectory-template baseline scored on seen and held-out layouts |
 | Human in the loop (HAI) | `feedback.py` | Checks a recorded take right away and tells the demonstrator how to fix it |
 
-`robot.py` and `gantry.xml` hold the MuJoCo replay. `grip.py` maps the phrases
+`robot.py` and `models/gantry.xml` hold the MuJoCo replay. `grip.py` maps the phrases
 `grip gently` and `grip firmly` to grip-force targets. `config.py` holds the
 shared scene geometry and workspace limits; `tests/test_config.py` checks that
-they match `gantry.xml`.
+they match `models/gantry.xml`.
 
 ## Run it
 
 ```sh
 uv sync --python 3.12
-uv run --locked python run.py --compare --out runs/comparison
-uv run --locked python run.py --prompt "grip gently" --out runs/single
-uv run --locked python -m unittest discover -s tests
+uv run --locked python scripts/run.py --compare --out runs/comparison
+uv run --locked python scripts/run.py --prompt "grip gently" --out runs/single
+uv run --locked python -m unittest discover -s tests -t .
 ```
 
 The video-packaging test is skipped when FFmpeg is not installed.
@@ -99,8 +109,8 @@ robot is drawn.
 ### Track a calibrated RGB-D sequence
 
 ```sh
-uv run --locked python perception.py rgb/ depth/ camera.json tracks.json --fps 10
-uv run --locked python run.py --tracks tracks.json --out runs/recording
+uv run --locked python scripts/perception.py rgb/ depth/ camera.json tracks.json --fps 10
+uv run --locked python scripts/run.py --tracks tracks.json --out runs/recording
 ```
 
 Use aligned RGB and 16-bit depth PNGs with matching frame names. The CPU
@@ -113,8 +123,8 @@ block, set `"object_center_offset": [0, 0, -0.025]` in robot coordinates.
 ## Feedback to the demonstrator
 
 ```sh
-uv run --locked python feedback.py --tracks tracks.json
-uv run --locked python feedback.py --examples
+uv run --locked python scripts/feedback.py --tracks tracks.json
+uv run --locked python scripts/feedback.py --examples
 ```
 
 Right after a take, `feedback.py` plans and replays the motion without
@@ -137,7 +147,7 @@ the render projection before supplying the source frames and masks.
 To prepare a masked Wan2.1-VACE clip with FFmpeg:
 
 ```sh
-uv run --locked python wan_input.py runs/single/reference --out runs/wan-input
+uv run --locked python scripts/wan_input.py runs/single/reference --out runs/wan-input
 ```
 
 The bundle contains aligned control and robot-mask MP4s, padded to a VACE
@@ -181,7 +191,7 @@ so it passes almost by construction. To show that the checks can fail,
 that imitate generation failures:
 
 ```sh
-uv run --locked python verify_controls.py --out runs/controls
+uv run --locked python scripts/verify_controls.py --out runs/controls
 ```
 
 | Control | Corruption | Expected | Rejected by |
@@ -200,7 +210,7 @@ video is small.
 ## Policy baseline
 
 ```sh
-uv run --locked python policy.py --out runs/policy
+uv run --locked python scripts/policy.py --out runs/policy
 ```
 
 The CPU baseline fits goal-conditioned motion to accepted action labels. It

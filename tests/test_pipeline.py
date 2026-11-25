@@ -12,7 +12,7 @@ from run import check_replay
 
 class PipelineTest(unittest.TestCase):
     def test_same_demo_passes_both_grip_settings_and_exports_labels(self):
-        project = Path(__file__).resolve().parents[1]
+        project = Path(__file__).resolve().parents[1] / "scripts"
         with tempfile.TemporaryDirectory() as temp:
             output = Path(temp) / "paired"
             process = subprocess.run(

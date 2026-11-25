@@ -4,7 +4,7 @@ from pathlib import Path
 
 from feedback import RULES, example_takes, explain, review
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1] / "scripts"
 
 
 def _messages():

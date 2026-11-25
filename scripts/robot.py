@@ -7,7 +7,7 @@ import numpy as np
 
 from config import OPEN_JAW_POSITION, TOOL_MAX_Z, TOOL_MIN_Z, TOOL_WORKSPACE_XY
 
-MODEL_PATH = Path(__file__).with_name("gantry.xml")
+MODEL_PATH = Path(__file__).resolve().parents[1] / "models" / "gantry.xml"
 MAX_JAW_EFFORT = 10.0
 CONTACT_THRESHOLD = 1e-3
 

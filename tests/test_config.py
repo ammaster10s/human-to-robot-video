@@ -4,7 +4,7 @@ from pathlib import Path
 
 import config
 
-MODEL = ET.parse(Path(__file__).resolve().parents[1] / "gantry.xml").getroot()
+MODEL = ET.parse(Path(__file__).resolve().parents[1] / "models" / "gantry.xml").getroot()
 
 
 def _floats(text):
