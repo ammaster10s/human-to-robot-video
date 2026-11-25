@@ -13,11 +13,13 @@ replay, and pairs accepted robot frames with action labels.
 | 2. Action retargeting | `retarget.py` | Finds grasp and release from fingertip spacing and plans gantry actions |
 | 3. Human removal and robot render | `video.py` (`render`) | Composites the robot and writes masks, depth and keypoints |
 | 4. Conditional video generation | `wan_input.py` | Packages control and mask clips for Wan2.1-VACE (optional, GPU) |
-| 5. Verification and filtering | `run.py`, `video.py` (`verify`) | Physical replay checks and visual drift, IoU and background checks |
-| 6. Policy learning and evaluation | `policy.py` | Goal-conditioned baseline scored on seen and held-out layouts |
+| 5. Verification and filtering | `run.py`, `video.py` (`verify`), `verify_controls.py` | Physical replay checks, visual drift, IoU and background checks, and negative controls |
+| 6. Policy learning and evaluation | `policy.py` | Trajectory-template baseline scored on seen and held-out layouts |
 
 `robot.py` and `gantry.xml` hold the MuJoCo replay. `grip.py` maps the phrases
-`grip gently` and `grip firmly` to grip-force targets.
+`grip gently` and `grip firmly` to grip-force targets. `config.py` holds the
+shared scene geometry and workspace limits; `tests/test_config.py` checks that
+they match `gantry.xml`.
 
 ## Run it
 
@@ -141,6 +143,30 @@ The physical check uses lift, contact and object drift during the carry, tool
 error and final placement. The default video check measures tool and object
 marker displacement from the reference projection.
 
+### Verification controls
+
+In the default run, the candidate video is rendered from the physical replay,
+so it passes almost by construction. To show that the checks can fail,
+`verify_controls.py` renders one faithful candidate and four corrupted ones
+that imitate generation failures:
+
+```sh
+uv run --locked python verify_controls.py --out runs/controls
+```
+
+| Control | Corruption | Expected | Rejected by |
+|---|---|---|---|
+| `faithful` | none | accept | — |
+| `object_drift` | block moved 4 cm sideways during the carry | reject | object marker drift, physical carry error |
+| `tool_offset` | gripper shifted 3 cm along x | reject | tool marker drift, robot IoU, physical tool error |
+| `background_patch` | 40 px patch painted in a background corner | reject | background change |
+| `missing_frame` | last frame deleted | reject | frame count |
+
+The script writes `controls.json` and exits with status 1 if any control is
+not decided as expected. In our run, the faithful candidate's object marker
+error was 7.2 px against an 8 px tolerance, so the margin for real generated
+video is small.
+
 ## Policy baseline
 
 ```sh
@@ -151,6 +177,13 @@ The CPU baseline fits goal-conditioned motion to accepted action labels. It
 scores seen and held-out layouts in MuJoCo, using the supplied start and goal
 positions to predict an open-loop trajectory. Pass repeated `--demo-run` flags
 to train on other accepted runs with the same time grid.
+
+This is a trajectory-template baseline, not a learned visuomotor policy. It
+averages progress along a straight start-to-goal path and a shared height
+profile. By default it trains on synthetic demonstrations, and the held-out
+layouts are also straight tabletop moves, so 3 of 3 held-out successes
+indicate that the pipeline is consistent, not that the policy generalizes.
+Diffusion Policy on translated video remains future work.
 
 ## Scope and limitations
 
