@@ -1,8 +1,23 @@
 # Human-to-robot video
 
-A pick-and-place prototype based on the research proposal. It retargets tracked
-human motion to a simulated gripper, checks contact during replay, and pairs
-accepted robot frames with action labels.
+A pick-and-place prototype for the Group 6 research proposal *Human-to-Robot
+Video Translation for Scalable Robot Learning* (I664E Human-AI Interaction II).
+It retargets tracked human motion to a simulated gripper, checks contact during
+replay, and pairs accepted robot frames with action labels.
+
+## Pipeline at a glance
+
+| Proposal stage | Module | What it does here |
+|---|---|---|
+| 1. Hand and scene perception | `perception.py` | Tracks thumb, index finger and object markers in calibrated RGB-D frames |
+| 2. Action retargeting | `retarget.py` | Finds grasp and release from fingertip spacing and plans gantry actions |
+| 3. Human removal and robot render | `video.py` (`render`) | Composites the robot and writes masks, depth and keypoints |
+| 4. Conditional video generation | `wan_input.py` | Packages control and mask clips for Wan2.1-VACE (optional, GPU) |
+| 5. Verification and filtering | `run.py`, `video.py` (`verify`) | Physical replay checks and visual drift, IoU and background checks |
+| 6. Policy learning and evaluation | `policy.py` | Goal-conditioned baseline scored on seen and held-out layouts |
+
+`robot.py` and `gantry.xml` hold the MuJoCo replay. `grip.py` maps the phrases
+`grip gently` and `grip firmly` to grip-force targets.
 
 ## Run it
 
@@ -12,6 +27,25 @@ uv run --locked python run.py --compare --out runs/comparison
 uv run --locked python run.py --prompt "grip gently" --out runs/single
 uv run --locked python -m unittest discover -s tests
 ```
+
+The video-packaging test is skipped when FFmpeg is not installed.
+
+On Windows inside a synced folder such as OneDrive, keep the virtual
+environment outside the folder so it is not uploaded:
+
+```powershell
+$env:UV_PROJECT_ENVIRONMENT = "$HOME\.venvs\human-to-robot-video"
+uv sync --python 3.12
+```
+
+### Example results
+
+On the built-in synthetic demo (`run.py --compare`), the measured mean carry
+force was about 2.0 N for `grip gently` and 5.0 N for `grip firmly`, with a
+placement error below 0.2 mm in both trials. `policy.py` succeeded on 3 of 3
+seen and 3 of 3 held-out layouts. These numbers come from one simulated gantry
+and rigid block. They show that the pipeline runs end to end, not that it
+transfers to real footage or hardware.
 
 Open `runs/comparison/gentle/video/preview.gif` to view the replay. The
 comparison runs the same motion and object twice. It reports mean measured grip
@@ -117,6 +151,8 @@ The CPU baseline fits goal-conditioned motion to accepted action labels. It
 scores seen and held-out layouts in MuJoCo, using the supplied start and goal
 positions to predict an open-loop trajectory. Pass repeated `--demo-run` flags
 to train on other accepted runs with the same time grid.
+
+## Scope and limitations
 
 The runnable evaluation uses a single simulated gantry and rigid block.
 Learned perception on unmarked human footage, per-robot LoRA training, GPU

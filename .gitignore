@@ -1,4 +1,14 @@
-.DS_Store
-.venv/
+# Python
 __pycache__/
+*.py[cod]
+.venv/
+
+# Outputs
 runs/
+
+# Editors and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
