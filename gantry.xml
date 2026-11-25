@@ -1,0 +1,43 @@
+<mujoco model="tabletop gantry">
+  <option timestep="0.002" integrator="implicitfast" />
+
+  <default>
+    <joint type="slide" limited="true" damping="0.5" />
+    <geom solref="0.008 1" />
+    <default class="finger">
+      <joint range="0 0.035" damping="1.0" armature="0.003" />
+      <geom type="box" size="0.004 0.015 0.017" mass="0.02"
+            friction="2 0.01 0.001" condim="4" />
+    </default>
+  </default>
+
+  <worldbody>
+    <geom name="table" type="plane" size="0.5 0.5 0.01" />
+    <body name="gripper" gravcomp="1">
+      <joint name="x" axis="1 0 0" range="-0.20 0.20" />
+      <joint name="y" axis="0 1 0" range="-0.20 0.20" />
+      <joint name="z" axis="0 0 1" range="0.018 0.28" />
+      <inertial pos="0 0 0" mass="0.2" diaginertia="0.0003 0.0003 0.0003" />
+      <body name="left_finger" pos="-0.01 0 0" gravcomp="1">
+        <joint name="left" axis="-1 0 0" class="finger" />
+        <geom name="left_pad" class="finger" />
+      </body>
+      <body name="right_finger" pos="0.01 0 0" gravcomp="1">
+        <joint name="right" axis="1 0 0" class="finger" />
+        <geom name="right_pad" class="finger" />
+      </body>
+    </body>
+    <body name="object" pos="0 0 0.025">
+      <freejoint name="object_pose" />
+      <geom name="block" type="box" size="0.02 0.02 0.025" mass="0.08" />
+    </body>
+  </worldbody>
+
+  <actuator>
+    <position name="move_x" joint="x" kp="1600" kv="16" forcerange="-40 40" />
+    <position name="move_y" joint="y" kp="1600" kv="16" forcerange="-40 40" />
+    <position name="move_z" joint="z" kp="1600" kv="16" forcerange="-40 40" />
+    <position name="grip_left" joint="left" kp="1500" kv="1" forcerange="-10 10" />
+    <position name="grip_right" joint="right" kp="1500" kv="1" forcerange="-10 10" />
+  </actuator>
+</mujoco>

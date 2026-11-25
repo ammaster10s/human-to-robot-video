@@ -29,6 +29,7 @@ def _point(value, label):
 
 
 def plan(frames: list[dict]) -> list[dict]:
+    """Map camera tracks in robot coordinates to timed gantry commands."""
     if not isinstance(frames, list) or len(frames) < 3:
         raise ValueError("expected a list of at least three tracked frames")
 
@@ -37,7 +38,7 @@ def plan(frames: list[dict]) -> list[dict]:
         if not isinstance(frame, dict):
             raise ValueError(f"frame {index} must be an object")
         time = _number(frame.get("time"), f"frame {index} time")
-        if index == 0 and time != 0 or samples and time <= samples[-1][0]:
+        if (index == 0 and time != 0) or (samples and time <= samples[-1][0]):
             raise ValueError("frame times must start at zero and strictly increase")
 
         thumb = _point(frame.get("thumb"), f"frame {index} thumb")
@@ -84,6 +85,7 @@ def plan(frames: list[dict]) -> list[dict]:
     release_time = samples[release][0]
     approach_duration = 0.8 * grasp_time
     actions = []
+    # shortcut: vertical approach and retreat assume a clear tabletop, use collision planning for clutter.
     for i, (time, obj, _, _) in enumerate(samples):
         if i < grasp:
             x, y, z = pickup
@@ -107,7 +109,8 @@ def demo_frames() -> list[dict]:
     frames = []
     for tick in range(54):
         time = tick / 10
-        x = -0.10 + 0.20 * min(1.0, max(0.0, time - 2.0))
+        travel = min(1.0, max(0.0, (time - 1.5) / 2.1))
+        x = -0.10 + 0.20 * travel**2 * (3 - 2 * travel)
         if time < 2.0:
             lift = min(1.0, max(0.0, (time - 1.4) / 0.6))
         else:
