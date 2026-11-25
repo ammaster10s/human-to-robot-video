@@ -2,6 +2,7 @@
 
 import json
 import math
+import time
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -186,7 +187,19 @@ def render(rows, output: Path, *, frames_dir=None, masks_dir=None, background=No
         delays.append(500)
         preview[0].save(staged / "preview.gif", save_all=True, append_images=preview[1:],
                         duration=delays, loop=0)
-        staged.rename(output)
+        _rename_with_retry(staged, output)
+
+
+def _rename_with_retry(source, target, attempts=8, delay=0.25):
+    # Windows sync clients (e.g. OneDrive) briefly lock freshly written folders.
+    for attempt in range(attempts):
+        try:
+            source.rename(target)
+            return
+        except PermissionError:
+            if attempt == attempts - 1:
+                raise
+            time.sleep(delay * (attempt + 1))
 
 
 def _center(image, color):

@@ -1,6 +1,7 @@
 """Plan a fixed-orientation pick-and-place from tracked fingertips and an object."""
 
 from math import dist, isfinite
+from numbers import Real
 
 TABLE_Z = 0.025
 CLOSE_WIDTH = 0.055
@@ -12,7 +13,8 @@ CLEARANCE = 0.09
 
 
 def _number(value, label):
-    if type(value) not in (int, float):
+    # numpy scalars from trackers are Real; bool is excluded on purpose.
+    if not isinstance(value, Real) or isinstance(value, bool):
         raise ValueError(f"{label} must be a finite number")
     try:
         if isfinite(value):

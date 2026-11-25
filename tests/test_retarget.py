@@ -30,6 +30,15 @@ class RetargetTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, error):
                     plan(frames)
 
+    def test_accepts_numpy_scalars_from_trackers(self):
+        import numpy as np
+        frames = [
+            {key: np.float64(value) if key == "time" else [np.float64(v) for v in value]
+             for key, value in frame.items()}
+            for frame in demo_frames()
+        ]
+        self.assertEqual(len(plan(frames)), len(frames))
+
     def test_ignores_pinches_away_from_the_object(self):
         frames = demo_frames()
         frames[3]["thumb"] = [0.1, 0, 0.1]
