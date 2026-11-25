@@ -1,0 +1,117 @@
+{
+  "comparison": {
+    "accepted": true,
+    "mean_carry_force_n": {
+      "gentle": 1.991697298462055,
+      "firm": 4.986090439004007
+    },
+    "placement_error_m": {
+      "gentle": 0.00015151432568211493,
+      "firm": 0.00010457265076052132
+    }
+  },
+  "trials": {
+    "gentle": {
+      "accepted": true,
+      "grip_mode": "gentle",
+      "grip_target_n": 2.0,
+      "physical": {
+        "accepted": true,
+        "reasons": [],
+        "lift_m": 0.11125122392264503,
+        "carry_contact_rate": 1.0,
+        "placement_error_m": 0.00015151432568211493,
+        "max_tool_error_m": 0.005981696504539274,
+        "max_carry_error_m": 0.011644980775908266,
+        "mean_carry_force_n": 1.991697298462055
+      },
+      "video": {
+        "accepted": true,
+        "frames": 54,
+        "tolerance_px": 8,
+        "max_tool_error_px": 3.0,
+        "max_object_error_px": 7.21,
+        "issues": [],
+        "min_robot_iou": 0.7411,
+        "max_background_change": 0.0,
+        "checks": [
+          "markers",
+          "robot_iou",
+          "background"
+        ]
+      },
+      "decision": "accept",
+      "attempts": [
+        {
+          "source": "C:\\Users\\Ariful\\OneDrive - Japan Advanced Institute of Science and Technology\\PhD JAIST\\Course\\2.1\\I664E - Human AI Interaction II\\Final Project\\human-to-robot-video\\runs\\demo\\compare\\gentle\\video",
+          "video": {
+            "accepted": true,
+            "frames": 54,
+            "tolerance_px": 8,
+            "max_tool_error_px": 3.0,
+            "max_object_error_px": 7.21,
+            "issues": [],
+            "min_robot_iou": 0.7411,
+            "max_background_change": 0.0,
+            "checks": [
+              "markers",
+              "robot_iou",
+              "background"
+            ]
+          }
+        }
+      ]
+    },
+    "firm": {
+      "accepted": true,
+      "grip_mode": "firm",
+      "grip_target_n": 5.0,
+      "physical": {
+        "accepted": true,
+        "reasons": [],
+        "lift_m": 0.11224411094301656,
+        "carry_contact_rate": 1.0,
+        "placement_error_m": 0.00010457265076052132,
+        "max_tool_error_m": 0.006040128181103901,
+        "max_carry_error_m": 0.010678802175248935,
+        "mean_carry_force_n": 4.986090439004007
+      },
+      "video": {
+        "accepted": true,
+        "frames": 54,
+        "tolerance_px": 8,
+        "max_tool_error_px": 3.0,
+        "max_object_error_px": 6.71,
+        "issues": [],
+        "min_robot_iou": 0.7411,
+        "max_background_change": 0.0,
+        "checks": [
+          "markers",
+          "robot_iou",
+          "background"
+        ]
+      },
+      "decision": "accept",
+      "attempts": [
+        {
+          "source": "C:\\Users\\Ariful\\OneDrive - Japan Advanced Institute of Science and Technology\\PhD JAIST\\Course\\2.1\\I664E - Human AI Interaction II\\Final Project\\human-to-robot-video\\runs\\demo\\compare\\firm\\video",
+          "video": {
+            "accepted": true,
+            "frames": 54,
+            "tolerance_px": 8,
+            "max_tool_error_px": 3.0,
+            "max_object_error_px": 6.71,
+            "issues": [],
+            "min_robot_iou": 0.7411,
+            "max_background_change": 0.0,
+            "checks": [
+              "markers",
+              "robot_iou",
+              "background"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

@@ -5,6 +5,19 @@ Video Translation for Scalable Robot Learning* (I664E Human-AI Interaction II).
 It retargets tracked human motion to a simulated gripper, checks contact during
 replay, and pairs accepted robot frames with action labels.
 
+## Quick demo
+
+```sh
+uv sync --python 3.12
+uv run --locked python demo.py
+```
+
+This runs every demo once (about 30 s on a laptop CPU) and writes
+[`results/summary.md`](results/summary.md) with the grip-force comparison, the
+verification negative controls, the demonstrator feedback examples and the
+policy baseline, together with the JSON reports and two replay GIFs. The
+`results/` folder is committed, so you can read it without installing anything.
+
 ## Pipeline at a glance
 
 | Proposal stage | Module | What it does here |
@@ -15,6 +28,7 @@ replay, and pairs accepted robot frames with action labels.
 | 4. Conditional video generation | `wan_input.py` | Packages control and mask clips for Wan2.1-VACE (optional, GPU) |
 | 5. Verification and filtering | `run.py`, `video.py` (`verify`), `verify_controls.py` | Physical replay checks, visual drift, IoU and background checks, and negative controls |
 | 6. Policy learning and evaluation | `policy.py` | Trajectory-template baseline scored on seen and held-out layouts |
+| Human in the loop (HAI) | `feedback.py` | Checks a recorded take right away and tells the demonstrator how to fix it |
 
 `robot.py` and `gantry.xml` hold the MuJoCo replay. `grip.py` maps the phrases
 `grip gently` and `grip firmly` to grip-force targets. `config.py` holds the
@@ -95,6 +109,22 @@ object. Camera JSON contains `fx`, `fy`, `cx`, `cy`, `depth_scale` in metres
 per raw depth unit, and a rigid 4×4 `camera_to_robot` transform. The camera
 axes are right, down and forward. For a top marker on the upright test
 block, set `"object_center_offset": [0, 0, -0.025]` in robot coordinates.
+
+## Feedback to the demonstrator
+
+```sh
+uv run --locked python feedback.py --tracks tracks.json
+uv run --locked python feedback.py --examples
+```
+
+Right after a take, `feedback.py` plans and replays the motion without
+rendering video, which takes a few seconds. It reports whether the recording
+is usable and turns each planner or replay failure into one instruction for
+the person who recorded it, for example "Start with an open hand, then pinch
+the object between your thumb and index finger." `--examples` reviews a good
+take and four typical mistakes. Exit status 2 means the take is not usable.
+`tests/test_feedback.py` fails if a planner or replay message has no matching
+instruction, so new checks must come with advice.
 
 ## Render conditions and appearance editing
 

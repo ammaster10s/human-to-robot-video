@@ -1,0 +1,63 @@
+{
+  "all_as_expected": true,
+  "controls": {
+    "faithful": {
+      "expected": "accept",
+      "decision": "accept",
+      "as_expected": true,
+      "visual_issues": [],
+      "physical_reasons": [],
+      "max_tool_error_px": 3.0,
+      "max_object_error_px": 7.21
+    },
+    "object_drift": {
+      "expected": "reject",
+      "decision": "reject",
+      "as_expected": true,
+      "visual_issues": [
+        "object drift exceeds 8 px"
+      ],
+      "physical_reasons": [
+        "The object strayed more than 25 mm from its tracked path during the carry."
+      ],
+      "max_tool_error_px": 3.0,
+      "max_object_error_px": 17.0
+    },
+    "tool_offset": {
+      "expected": "reject",
+      "decision": "reject",
+      "as_expected": true,
+      "visual_issues": [
+        "tool drift exceeds 8 px",
+        "robot silhouette IoU below 0.7"
+      ],
+      "physical_reasons": [
+        "The tool strayed more than 25 mm from the planned path."
+      ],
+      "max_tool_error_px": 18.25,
+      "max_object_error_px": 7.21
+    },
+    "background_patch": {
+      "expected": "reject",
+      "decision": "reject",
+      "as_expected": true,
+      "visual_issues": [
+        "background changed outside the robot and object"
+      ],
+      "physical_reasons": [],
+      "max_tool_error_px": 3.0,
+      "max_object_error_px": 7.21
+    },
+    "missing_frame": {
+      "expected": "reject",
+      "decision": "reject",
+      "as_expected": true,
+      "visual_issues": [
+        "frame names or counts differ"
+      ],
+      "physical_reasons": [],
+      "max_tool_error_px": null,
+      "max_object_error_px": null
+    }
+  }
+}

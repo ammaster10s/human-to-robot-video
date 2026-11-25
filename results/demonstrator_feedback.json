@@ -1,0 +1,72 @@
+{
+  "good": {
+    "usable": true,
+    "stage": "replay",
+    "feedback": [
+      {
+        "problem": null,
+        "instruction": "Good take: the robot can reproduce it.",
+        "frame": null,
+        "detail": null
+      }
+    ],
+    "physical": {
+      "accepted": true,
+      "reasons": [],
+      "lift_m": 0.11125122392264503,
+      "carry_contact_rate": 1.0,
+      "placement_error_m": 0.00015151432568211493,
+      "max_tool_error_m": 0.005981696504539274,
+      "max_carry_error_m": 0.011644980775908266,
+      "mean_carry_force_n": 1.991697298462055
+    }
+  },
+  "object_out_of_reach": {
+    "usable": false,
+    "stage": "planning",
+    "feedback": [
+      {
+        "problem": "The object is out of the robot's reach.",
+        "instruction": "Keep the object within about 17 cm of the centre of the table.",
+        "frame": 0,
+        "detail": "frame 0 object is outside the gantry workspace"
+      }
+    ]
+  },
+  "never_released": {
+    "usable": false,
+    "stage": "planning",
+    "feedback": [
+      {
+        "problem": "No clear release was found.",
+        "instruction": "After putting the object down, open your fingers and move your hand away before stopping.",
+        "frame": null,
+        "detail": "expected release followed by a retreat"
+      }
+    ]
+  },
+  "hand_left_the_object": {
+    "usable": false,
+    "stage": "planning",
+    "feedback": [
+      {
+        "problem": "Your hand lost the object during the carry.",
+        "instruction": "Keep the object between your fingertips while you carry it.",
+        "frame": null,
+        "detail": "the tracked hand separated from the object during the carry"
+      }
+    ]
+  },
+  "object_pushed_before_grasp": {
+    "usable": false,
+    "stage": "planning",
+    "feedback": [
+      {
+        "problem": "The object moved before you grasped it.",
+        "instruction": "Do not touch or push the object until you pinch it.",
+        "frame": null,
+        "detail": "object moved before the grasp"
+      }
+    ]
+  }
+}
