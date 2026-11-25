@@ -32,8 +32,9 @@ looks like this:
 {"time": 0.0, "thumb": [-0.1, -0.05, 0.115], "index": [-0.1, 0.05, 0.115], "object_position": [-0.1, 0, 0.025]}
 ```
 
-Time is in seconds and starts at zero. Coordinates are metres in the robot
-frame. Use one fixed-orientation pick-and-place, a clear tabletop and a block
+Time is in seconds and starts at zero. Clips can run for up to 60 seconds.
+Coordinates are metres in the robot frame. Use one fixed-orientation
+pick-and-place, a clear tabletop and a block
 4 cm wide and 5 cm tall. The track should start and end at rest, with enough
 time for the jaws to close before lifting and to open before retreating.
 The planner finds the pinch and release from fingertip spacing and validates
@@ -52,12 +53,13 @@ object markers. Use a pose and object tracker for unmarked model output.
 ## Grip and verification
 
 The phrases `grip gently` and `grip firmly` select 2 N and 5 N per jaw in
-MuJoCo. Replay logs bilateral contact and the mean normal force across the
-two jaws. These targets are for the simulated block. The language-to-force
-idea is inspired by [Tacinf](https://arxiv.org/abs/2611.29240).
+MuJoCo. During bilateral contact, the controller adjusts jaw effort using
+the measured normal force. Replay logs the mean across the two jaws. The
+targets are for the simulated block. The language-to-force idea is inspired
+by [Tacinf](https://arxiv.org/abs/2611.29240).
 
-The physical check uses lift, contact during the carry, tool error and final
-placement. The video check measures tool and object marker displacement from
-the reference projection. The demo builds paired training data and verifies
-it through replay. Pose extraction, generative video, learned-policy training
-and hardware validation are outside this prototype.
+The physical check uses lift, contact and object drift during the carry, tool
+error and final placement. The video check measures tool and object marker
+displacement from the reference projection. The demo builds paired training
+data and verifies it through replay. Pose extraction, generative video,
+learned-policy training and hardware validation are outside this prototype.

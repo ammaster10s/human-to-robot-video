@@ -1,5 +1,7 @@
 import unittest
+from unittest.mock import patch
 
+import robot
 from robot import replay
 
 
@@ -47,3 +49,12 @@ class ReplayTest(unittest.TestCase):
         actions[3]["position"][0] = float("inf")
         with self.assertRaisesRegex(ValueError, "three finite coordinates"):
             replay(actions, 2.0)
+
+    def test_tactile_feedback_corrects_a_low_measurement(self):
+        actions = pick_and_place()[:4]
+        actions[-1]["time"] = 3.0
+        uncorrected = 0.8 * replay(actions, 2.0)[-1]["grip_force"]
+        measure = robot._grip_force
+        with patch.object(robot, "_grip_force", side_effect=lambda *args: 0.8 * measure(*args)):
+            corrected = replay(actions, 2.0)[-1]["grip_force"]
+        self.assertGreater(corrected, uncorrected + 0.2)

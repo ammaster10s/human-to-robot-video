@@ -17,14 +17,18 @@ def check_replay(actions: list[dict], samples: list[dict]) -> dict:
     start_height = actions[0]["object_position"][2]
     pairs = list(zip(actions, samples, strict=True))
     carry = [
-        sample for action, sample in pairs
+        (action, sample) for action, sample in pairs
         if action["closed"] and action["object_position"][2] > start_height + 0.02
     ]
-    holding = [sample for sample in carry if sample["contact"]]
+    holding = [sample for _, sample in carry if sample["contact"]]
     lift = max((sample["object_position"][2] - start_height for sample in holding), default=0.0)
     contact_rate = len(holding) / len(carry) if carry else 0.0
     placement = dist(actions[-1]["object_position"], samples[-1]["object_position"])
     tool_error = max(dist(action["position"], sample["position"]) for action, sample in pairs)
+    carry_error = max((
+        dist(action["object_position"], sample["object_position"])
+        for action, sample in carry
+    ), default=0.0)
     reasons = []
     if lift < 0.01 or contact_rate < 0.8:
         reasons.append("Bilateral contact was unstable during the lift and carry.")
@@ -32,6 +36,8 @@ def check_replay(actions: list[dict], samples: list[dict]) -> dict:
         reasons.append("The object was not released within 15 mm of the placement target.")
     if tool_error > 0.025:
         reasons.append("The tool strayed more than 25 mm from the planned path.")
+    if carry_error > 0.025:
+        reasons.append("The object strayed more than 25 mm from its tracked path during the carry.")
     return {
         "accepted": not reasons,
         "reasons": reasons,
@@ -39,7 +45,8 @@ def check_replay(actions: list[dict], samples: list[dict]) -> dict:
         "carry_contact_rate": contact_rate,
         "placement_error_m": placement,
         "max_tool_error_m": tool_error,
-        "mean_carry_force_n": mean(sample["grip_force"] for sample in carry) if carry else 0.0,
+        "max_carry_error_m": carry_error,
+        "mean_carry_force_n": mean(sample["grip_force"] for _, sample in carry) if carry else 0.0,
     }
 
 

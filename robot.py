@@ -7,6 +7,8 @@ import numpy as np
 
 MODEL_PATH = Path(__file__).with_name("gantry.xml")
 OPEN_JAW_POSITION = 0.035
+MAX_JAW_EFFORT = 10.0
+CONTACT_THRESHOLD = 1e-3
 
 
 def replay(actions: list[dict], grip_force: float) -> list[dict]:
@@ -14,7 +16,7 @@ def replay(actions: list[dict], grip_force: float) -> list[dict]:
 
     Each open/close command takes effect from its timestamp onward.
     """
-    if not 1 <= grip_force <= 10:
+    if not 1 <= grip_force <= MAX_JAW_EFFORT:
         raise ValueError("Simulated grip force must be between 1 and 10 N per jaw.")
     if not actions:
         raise ValueError("Replay requires at least one action.")
@@ -52,38 +54,51 @@ def replay(actions: list[dict], grip_force: float) -> list[dict]:
     data.ctrl[axes] = positions[0]
     data.ctrl[jaws] = OPEN_JAW_POSITION
     dt = model.opt.timestep
+    effort = grip_force
+    min_effort = 0.75 * grip_force
+    max_effort = min(MAX_JAW_EFFORT, 1.25 * grip_force)
 
     samples = []
     for i, (action, time, position) in enumerate(zip(actions, times, positions, strict=True)):
         if i:
             duration = time - times[i - 1]
             steps = int(np.ceil(duration / dt))
-            model.opt.timestep = duration / steps
+            step_time = duration / steps
+            model.opt.timestep = step_time
             was_closed = actions[i - 1]["closed"]
-            effort = grip_force if was_closed else 10.0
-            model.actuator_forcerange[jaws] = (-effort, effort)
             data.ctrl[jaws] = 0.0 if was_closed else OPEN_JAW_POSITION
+            if not was_closed:
+                effort = grip_force
             start = positions[i - 1]
             for step in range(1, steps + 1):
+                limit = effort if was_closed else MAX_JAW_EFFORT
+                model.actuator_forcerange[jaws] = (-limit, limit)
                 data.ctrl[axes] = start + (position - start) * (step / steps)
                 mujoco.mj_step(model, data)
+                if was_closed:
+                    measured = _grip_force(model, data, pad_ids, object_id)
+                    # Integrate slowly so contact impulses do not trigger a large correction.
+                    if measured:
+                        effort += step_time * (grip_force - measured)
+                        effort = min(max_effort, max(min_effort, effort))
+                    else:
+                        effort = grip_force
 
         mujoco.mj_forward(model, data)
-        left, right = _jaw_contact_forces(model, data, pad_ids, object_id)
-        contact = left > 1e-3 and right > 1e-3
+        measured = _grip_force(model, data, pad_ids, object_id)
         samples.append({
             "time": float(time),
             "position": data.body("gripper").xpos.tolist(),
             "object_position": data.body("object").xpos.tolist(),
             "closed": action["closed"],
             "gripper_width": float(0.012 + data.qpos[finger_qpos].sum()),
-            "grip_force": (left + right) / 2 if contact else 0.0,
-            "contact": contact,
+            "grip_force": measured,
+            "contact": measured > 0.0,
         })
     return samples
 
 
-def _jaw_contact_forces(model, data, pad_ids, object_id):
+def _grip_force(model, data, pad_ids, object_id):
     forces = dict.fromkeys(pad_ids, 0.0)
     wrench = np.zeros(6)
     for i, contact in enumerate(data.contact):
@@ -96,4 +111,5 @@ def _jaw_contact_forces(model, data, pad_ids, object_id):
         if pad in forces:
             mujoco.mj_contactForce(model, data, i, wrench)
             forces[pad] += float(wrench[0])
-    return tuple(forces.values())
+    left, right = forces.values()
+    return (left + right) / 2 if min(left, right) > CONTACT_THRESHOLD else 0.0
