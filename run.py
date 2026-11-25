@@ -12,13 +12,21 @@ from retarget import demo_frames, plan
 from robot import replay
 from video import render, verify
 
+# Physical acceptance thresholds for a replayed episode (metres).
+CARRY_HEIGHT_M = 0.02        # object counts as carried once lifted this far
+MIN_LIFT_M = 0.01
+MIN_CONTACT_RATE = 0.8
+PLACEMENT_TOLERANCE_M = 0.015
+TOOL_TOLERANCE_M = 0.025
+CARRY_TOLERANCE_M = 0.025
+
 
 def check_replay(actions: list[dict], samples: list[dict]) -> dict:
     start_height = actions[0]["object_position"][2]
     pairs = list(zip(actions, samples, strict=True))
     carry = [
         (action, sample) for action, sample in pairs
-        if action["closed"] and action["object_position"][2] > start_height + 0.02
+        if action["closed"] and action["object_position"][2] > start_height + CARRY_HEIGHT_M
     ]
     holding = [sample for _, sample in carry if sample["contact"]]
     lift = max((sample["object_position"][2] - start_height for sample in holding), default=0.0)
@@ -30,14 +38,14 @@ def check_replay(actions: list[dict], samples: list[dict]) -> dict:
         for action, sample in carry
     ), default=0.0)
     reasons = []
-    if lift < 0.01 or contact_rate < 0.8:
+    if lift < MIN_LIFT_M or contact_rate < MIN_CONTACT_RATE:
         reasons.append("Bilateral contact was unstable during the lift and carry.")
-    if placement > 0.015 or samples[-1]["contact"]:
-        reasons.append("The object was not released within 15 mm of the placement target.")
-    if tool_error > 0.025:
-        reasons.append("The tool strayed more than 25 mm from the planned path.")
-    if carry_error > 0.025:
-        reasons.append("The object strayed more than 25 mm from its tracked path during the carry.")
+    if placement > PLACEMENT_TOLERANCE_M or samples[-1]["contact"]:
+        reasons.append(f"The object was not released within {PLACEMENT_TOLERANCE_M * 1000:.0f} mm of the placement target.")
+    if tool_error > TOOL_TOLERANCE_M:
+        reasons.append(f"The tool strayed more than {TOOL_TOLERANCE_M * 1000:.0f} mm from the planned path.")
+    if carry_error > CARRY_TOLERANCE_M:
+        reasons.append(f"The object strayed more than {CARRY_TOLERANCE_M * 1000:.0f} mm from its tracked path during the carry.")
     return {
         "accepted": not reasons,
         "reasons": reasons,

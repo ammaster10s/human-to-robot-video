@@ -3,7 +3,8 @@
 from math import dist, isfinite
 from numbers import Real
 
-TABLE_Z = 0.025
+from config import OBJECT_MAX_Z, OBJECT_WORKSPACE_XY, TABLE_Z
+
 CLOSE_WIDTH = 0.055
 OPEN_WIDTH = 0.075
 GRASP_DISTANCE = 0.035
@@ -47,7 +48,7 @@ def plan(frames: list[dict]) -> list[dict]:
         finger = _point(frame.get("index"), f"frame {index} index")
         obj = _point(frame.get("object_position"), f"frame {index} object_position")
         x, y, z = obj
-        if abs(x) > 0.17 or abs(y) > 0.17 or not TABLE_Z <= z <= 0.24:
+        if abs(x) > OBJECT_WORKSPACE_XY or abs(y) > OBJECT_WORKSPACE_XY or not TABLE_Z <= z <= OBJECT_MAX_Z:
             raise ValueError(f"frame {index} object is outside the gantry workspace")
 
         midpoint = [0.5 * a + 0.5 * b for a, b in zip(thumb, finger)]

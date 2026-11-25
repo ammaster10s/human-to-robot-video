@@ -5,8 +5,9 @@ from pathlib import Path
 import mujoco
 import numpy as np
 
+from config import OPEN_JAW_POSITION, TOOL_MAX_Z, TOOL_MIN_Z, TOOL_WORKSPACE_XY
+
 MODEL_PATH = Path(__file__).with_name("gantry.xml")
-OPEN_JAW_POSITION = 0.035
 MAX_JAW_EFFORT = 10.0
 CONTACT_THRESHOLD = 1e-3
 
@@ -32,7 +33,9 @@ def replay(actions: list[dict], grip_force: float) -> list[dict]:
         raise ValueError("Replay accepts clips of at most 60 seconds.")
     if positions.shape != (len(actions), 3) or not np.isfinite(positions).all():
         raise ValueError("Each gripper position must have three finite coordinates.")
-    if np.any(positions < (-0.18, -0.18, 0.025)) or np.any(positions > (0.18, 0.18, 0.25)):
+    low = (-TOOL_WORKSPACE_XY, -TOOL_WORKSPACE_XY, TOOL_MIN_Z)
+    high = (TOOL_WORKSPACE_XY, TOOL_WORKSPACE_XY, TOOL_MAX_Z)
+    if np.any(positions < low) or np.any(positions > high):
         raise ValueError("Gripper motion exceeds the simulated gantry workspace.")
     if start_object.shape != (3,) or not np.isfinite(start_object).all():
         raise ValueError("The initial object position must have three finite coordinates.")

@@ -9,6 +9,8 @@ from tempfile import TemporaryDirectory
 import numpy as np
 from PIL import Image, ImageChops, ImageColor, ImageDraw
 
+from config import BLOCK_HALF_EXTENTS
+
 
 SIZE = (640, 420)
 TOOL_MARKER = (255, 137, 50)
@@ -100,7 +102,7 @@ def _overlay(canvas, row):
              (0.011, 0.011, shaft_height / 2), ARM)
     _box(draw, depth, size, wrist, (gap / 2 + 0.016, 0.015, 0.008), ARM)
     _box(draw, depth, size, left, (0.007, 0.012, 0.029), FINGERS)
-    _box(draw, depth, size, (ox, oy, oz), (0.02, 0.02, 0.025), BLOCK)
+    _box(draw, depth, size, (ox, oy, oz), BLOCK_HALF_EXTENTS, BLOCK)
     _box(draw, depth, size, right, (0.007, 0.012, 0.029), FINGERS)
 
     for point, color in ((wrist, TOOL_MARKER), (object_marker, OBJECT_MARKER)):
